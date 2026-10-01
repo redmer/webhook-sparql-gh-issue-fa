@@ -97,3 +97,31 @@ When running locally (`func start`, no `WEBSITE_SITE_NAME`), extra endpoints und
 
 See [docs/testing/local-testing.http](docs/testing/local-testing.http) for a
 ready-to-run sequence (REST Client / httpyac).
+
+## Future development: generic data sources
+
+Everything after "produce a table of strings" (diff → hash → Mustache → issue)
+is already source-agnostic. Two changes would generalize the app beyond SPARQL:
+
+1. **Add a `sourceType` discriminator to `WebhookConfigs`.** `"sparql"` keeps
+   today's behavior (`sparqlEndpoint` + `sparqlQuery`); `"http"` adds
+   `sourceUrl`, `sourceMethod`, `sourceHeaders` (JSON), a Mustache-rendered
+   `sourceBody` (so `{{payload.dataset.id}}` can vary the request), and a
+   `sourceMapping` (e.g. a JSONPath such as `$[*]`) to project the response
+   into the canonical `{vars, rows}` shape. Endpoints that already return
+   `application/sparql-results+json` work with zero mapping.
+
+2. **Refactor the query step behind an interface**, e.g.
+   `interface DataSource { fetchView(payload): Promise<SparqlResult> }`, and
+   replace the direct `runSparqlQuery` call in `webhookProcess` with
+   `buildSource(config).fetchView(payload)`. Downstream code stays untouched.
+
+### Caveats
+
+- A volatile query like `SELECT * { BIND (NOW() as ?now) }` opens an issue on
+  _every_ event. If "notify on every webhook" is desired, add an explicit
+  `notifyOnly: true` flag that skips diffing and hashing instead.
+- Per-source auth (bearer/custom header/none) should live on the config row
+  once non-TriplyDB sources are supported; `TRIPLYDB_TOKEN` is currently global.
+- Arbitrary outbound HTTP makes the function an egress proxy — consider a
+  hostname allow-list before exposing it broadly.
