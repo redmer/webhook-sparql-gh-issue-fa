@@ -10,7 +10,6 @@ import { contentHash, normalize, resultsEqual } from "../lib/diff";
 import { runSparqlQuery, SparqlResult } from "../lib/sparql";
 import { getPreviousResult, StoredState } from "../lib/state";
 import { buildView, renderTemplate } from "../lib/template";
-import { forbiddenIfNotLocal } from "./devAdmin";
 
 /**
  * POST /api/dev/test/{webhookId}
@@ -24,6 +23,8 @@ import { forbiddenIfNotLocal } from "./devAdmin";
  * Never writes to state, never touches GitHub. Returns everything for
  * inspection in the REST client response.
  *
+ * Secured by authLevel "function" — a valid function key is required.
+ *
  * Query params:
  *   ?body=false   — omit the rendered issue body from the response
  */
@@ -31,8 +32,6 @@ export async function devTest(
   request: HttpRequest,
   context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  forbiddenIfNotLocal();
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };

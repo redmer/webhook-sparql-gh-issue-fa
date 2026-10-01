@@ -13,35 +13,17 @@ import {
   upsertStateEntity,
 } from "../lib/configStore";
 
-function isLocalEnvironment(): boolean {
-  return !process.env.WEBSITE_SITE_NAME;
-}
-
-export function forbiddenIfNotLocal(): HttpResponseInit | undefined {
-  if (!isLocalEnvironment()) {
-    return {
-      status: 403,
-      jsonBody: {
-        error:
-          "Dev admin endpoints are only available when running locally (func start).",
-      },
-    };
-  }
-  return undefined;
-}
-
 /**
  * PUT /api/dev/config/{webhookId}
  * Body: config properties (enabled, sparqlEndpoint, sparqlQuery, githubRepo,
  *       issueTitle, issueTemplate, issueLabels)
+ *
+ * Secured by authLevel "function" — a valid function key is required.
  */
 async function putConfig(
   request: HttpRequest,
   context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  const blocked = forbiddenIfNotLocal();
-  if (blocked) return blocked;
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };
@@ -64,9 +46,6 @@ async function getConfig(
   request: HttpRequest,
   _context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  const blocked = forbiddenIfNotLocal();
-  if (blocked) return blocked;
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };
@@ -84,9 +63,6 @@ async function deleteConfig(
   request: HttpRequest,
   context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  const blocked = forbiddenIfNotLocal();
-  if (blocked) return blocked;
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };
@@ -102,9 +78,6 @@ async function getState(
   request: HttpRequest,
   _context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  const blocked = forbiddenIfNotLocal();
-  if (blocked) return blocked;
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };
@@ -140,9 +113,6 @@ async function putState(
   request: HttpRequest,
   context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  const blocked = forbiddenIfNotLocal();
-  if (blocked) return blocked;
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };
@@ -176,9 +146,6 @@ async function deleteState(
   request: HttpRequest,
   context: InvocationContext,
 ): Promise<HttpResponseInit> {
-  const blocked = forbiddenIfNotLocal();
-  if (blocked) return blocked;
-
   const webhookId = request.params.webhookId;
   if (!webhookId) {
     return { status: 400, jsonBody: { error: "Missing webhookId" } };
