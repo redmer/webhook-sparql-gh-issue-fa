@@ -1,4 +1,5 @@
 import { app, InvocationContext } from "@azure/functions";
+import Mustache from "mustache";
 import { getWebhookConfig, WebhookConfig } from "../lib/config";
 import {
   contentHash,
@@ -16,14 +17,36 @@ interface QueueMessage {
   payload: Record<string, unknown>;
 }
 
-function resolveEndpoint(config: WebhookConfig): string {
+/**
+ * Render the configured SPARQL endpoint as a Mustache template against
+ * `{ payload }`, so e.g. `{{payload.dataset.id}}` can appear in the URL.
+ */
+function resolveEndpoint(
+  config: WebhookConfig,
+  payload: Record<string, unknown>,
+): string {
   const endpoint = config.sparqlEndpoint;
   if (!endpoint) {
     throw new Error(
       `No SPARQL endpoint: set sparqlEndpoint on config '${config.webhookId}'`,
     );
   }
-  return endpoint;
+  return Mustache.render(endpoint, { payload });
+}
+
+/**
+ * Render the configured SPARQL query as a Mustache template against
+ * `{ payload }`. Use `{{{...}}}` (triple braces) inside a BIND/VALUES when
+ * the payload value needs to be injected as-is rather than HTML-escaped,
+ * e.g. `BIND("{{{payload.payload.ticket}}}" AS ?payloadPayloadTicket)`.
+ * The config author is responsible for producing valid SPARQL (quoting the
+ * injected value, escaping quotes inside it, etc.).
+ */
+function resolveQuery(
+  config: WebhookConfig,
+  payload: Record<string, unknown>,
+): string {
+  return Mustache.render(config.sparqlQuery, { payload });
 }
 
 async function getBaseline(
@@ -59,9 +82,10 @@ export async function webhookProcess(
     return;
   }
 
-  const endpoint = resolveEndpoint(config);
+  const endpoint = resolveEndpoint(config, payload);
+  const query = resolveQuery(config, payload);
 
-  const currentRaw = await runSparqlQuery(endpoint, config.sparqlQuery);
+  const currentRaw = await runSparqlQuery(endpoint, query);
   const current = normalize(currentRaw);
   const baseline = await getBaseline(config, context);
 
