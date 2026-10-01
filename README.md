@@ -1,6 +1,6 @@
 # `triply-webhook-to-gh-issue-func`
 
-This Azure Function App (Typescript & NodeJS), when triggered as a TriplyDB webhook, compares the results of two SPARQL queries and if they're unequal, opens a GitHub issue.
+This Azure Function App (Typescript & NodeJS), when triggered as a TriplyDB webhook, compares the results of a SPARQL query with a previous baseline and if they're unequal, opens a GitHub issue.
 
 Two SPARQL queries establish a baseline (or old situation) and a result to compare with (or the new situation).
 These SELECT queries can have any number of columns, each of which need to be equal.
