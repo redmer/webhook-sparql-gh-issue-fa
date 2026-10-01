@@ -12,9 +12,14 @@
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
-    "@azure/functions": "^4.0.0"
+    "@azure/data-tables": "^13.3.0",
+    "@azure/functions": "^4.0.0",
+    "@azure/storage-queue": "^12.17.0",
+    "@octokit/rest": "^20.1.2",
+    "mustache": "^4.2.0"
   },
   "devDependencies": {
+    "@types/mustache": "^4.2.5",
     "@types/node": "18.x",
     "typescript": "^5.0.0",
     "rimraf": "^5.0.0"
