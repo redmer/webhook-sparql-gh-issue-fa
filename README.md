@@ -79,3 +79,21 @@ cp local.settings.json.template local.settings.json
 npm install
 npm start
 ```
+
+## Local testing endpoints
+
+When running locally (`func start`, no `WEBSITE_SITE_NAME`), extra endpoints under
+`/api/dev/*` let you configure and simulate everything with a `.http` file:
+
+| Method | Route                         | Purpose                                                                          |
+| ------ | ----------------------------- | -------------------------------------------------------------------------------- |
+| PUT    | `/api/dev/config/{webhookId}` | Upsert config into Table Storage                                                 |
+| GET    | `/api/dev/config/{webhookId}` | Read the parsed config back                                                      |
+| DELETE | `/api/dev/config/{webhookId}` | Delete config                                                                    |
+| GET    | `/api/dev/state/{webhookId}`  | Inspect stored previous SPARQL result                                            |
+| PUT    | `/api/dev/state/{webhookId}`  | Seed previous result (`{vars, rows}`) to force equal/unequal diffs               |
+| DELETE | `/api/dev/state/{webhookId}`  | Reset state                                                                      |
+| POST   | `/api/dev/test/{webhookId}`   | **Dry-run**: run query, compare, render issue — no state writes, no GitHub calls |
+
+See [docs/testing/local-testing.http](docs/testing/local-testing.http) for a
+ready-to-run sequence (REST Client / httpyac).

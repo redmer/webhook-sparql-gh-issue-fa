@@ -1,0 +1,108 @@
+# Local testing fixture for the dev endpoints.
+#
+# Prerequisites:
+#   1. Azurite running:        azurite --location .azurite
+#   2. local.settings.json:    AzureWebJobsStorage=UseDevelopmentStorage=true
+#      (TRIPLYDB_TOKEN / GITHUB_TOKEN only needed for requests 5+ / real flow)
+#   3. Function app running:   npm start
+#
+# These /api/dev/* endpoints are LOCAL-ONLY (403 when deployed).
+# Run them top-to-bottom with the REST Client / httpyac extension.
+# Requests 2 and 4 can be left commented out.
+
+@host = http://localhost:7071
+@webhookId = triply-test-webhook
+@sparqlEndpoint = https://api.datasets.crow.nl/datasets/crow/thesaurus/sparql
+
+# =============================================================================
+# Configure webhook: database is public datasource
+# =============================================================================
+
+# @name putConfig
+PUT {{host}}/api/dev/config/{{webhookId}}
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "sparqlEndpoint": "{{sparqlEndpoint}}",
+  "sparqlQuery": "SELECT * WHERE { [] <http://www.w3.org/2002/07/owl#versionInfo> ?version . BIND (NOW() AS ?time) } LIMIT 1",
+  "githubRepo": "my-repo",
+  "issueTitle": "Test ontology updated to version {{version}}",
+  "issueTemplate": "At {{time}} the ontology was updated to version {{version}}.\n\n|Time|Version|\n|---|---|\n{{#rows}}| {{time}} | {{version}} |\n{{/rows}}",
+  "issueLabels": "ontology, automated"
+}
+
+###
+
+# @name getConfig
+GET {{host}}/api/dev/config/{{webhookId}}
+
+###
+# =============================================================================
+# Simulate state before webhook call
+# =============================================================================
+
+# @name seedState
+# Seed the state equal to the current remote query result
+PUT {{host}}/api/dev/state/{{webhookId}}
+Content-Type: application/json
+
+{
+  "vars": ["time", "version"],
+  "rows": [["2026-09-30T19:40:23.605Z", "NEN2660:2022"]]
+}
+
+###
+
+# @name getState
+GET {{host}}/api/dev/state/{{webhookId}}
+
+###
+# =============================================================================
+# Simulate: dry-run a webhook (sync, no side effects)
+# =============================================================================
+
+# @name dryRun
+POST {{host}}/api/dev/test/{{webhookId}}
+Content-Type: application/json
+
+{
+  "eventName": "linkedDataUpload",
+  "dataset": { "id": "684185eed42889eb9a9cf94d", "name": "ecm" }
+}
+
+###
+# =============================================================================
+# Simulate webhook dispatch through queue (state is updated, real GH issue)
+# =============================================================================
+
+# @name fireWebhook
+POST {{host}}/api/webhook/{{webhookId}}
+Content-Type: application/json
+
+{
+  "eventName": "linkedDataUpload",
+  "time": "2026-10-01T09:00:00.000Z",
+  "dataset": {
+    "id": "684185eed42889eb9a9cf94d",
+    "name": "ecm",
+    "displayName": "Enterprise Content Model"
+  },
+  "user": {
+    "accountName": "redmer-kronemeijer"
+  }
+}
+
+### Get the issue afterwards with `gh issue list` in your githubRepo.
+
+# =============================================================================
+# Cleanup local config and state
+# =============================================================================
+
+# @name deleteState
+DELETE {{host}}/api/dev/state/{{webhookId}}
+
+###
+
+# @name deleteConfig
+DELETE {{host}}/api/dev/config/{{webhookId}}
