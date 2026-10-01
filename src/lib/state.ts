@@ -32,6 +32,7 @@ export async function saveResult(
   result: StoredState,
 ): Promise<void> {
   const client = tableClient();
+  await client.createTable();
   await client.upsertEntity(
     {
       partitionKey: "webhook",
