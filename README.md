@@ -61,6 +61,21 @@ The issue body is rendered with Mustache:
 - `{{#rows}}...{{/rows}}` — iterate over all rows; inside the loop, `{{columnName}}` refers to that row's value
 - `{{payload.dataset.name}}` — access the original TriplyDB webhook payload
 
+## Payload substitution in `sparqlEndpoint` and `sparqlQuery`
+
+Both `sparqlEndpoint` and `sparqlQuery` are also rendered as Mustache templates
+with the webhook payload as context (`{{payload.*}}`), so the query can depend
+on the triggering event:
+
+- **Endpoint**: `https://api.example.com/datasets/{{payload.dataset.owner.accountName}}/{{payload.dataset.name}}/sparql`
+- **Query**: use payload fields inside a `BIND`, e.g.
+  `BIND("{{{payload.payload.ticket}}}" AS ?payloadPayloadTicket)`
+
+Note the **triple braces `{{{...}}}`** in the query: Mustache's default
+`{{...}}` HTML-escapes values (`"` → `&quot;` etc.), which breaks SPARQL.
+Use `{{{...}}}` whenever you inject a value into SPARQL text, and make it a
+valid SPARQL term yourself (quote strings, escape embedded quotes, etc.).
+
 ## TriplyDB webhook setup
 
 Point your TriplyDB webhook to:

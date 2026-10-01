@@ -4,6 +4,7 @@ import {
   HttpResponseInit,
   InvocationContext,
 } from "@azure/functions";
+import Mustache from "mustache";
 import { getWebhookConfig } from "../lib/config";
 import { contentHash, normalize, resultsEqual } from "../lib/diff";
 import { runSparqlQuery, SparqlResult } from "../lib/sparql";
@@ -53,8 +54,8 @@ export async function devTest(
     return { status: 404, jsonBody: { error: `No config for '${webhookId}'` } };
   }
 
-  const endpoint = config.sparqlEndpoint;
-  if (!endpoint) {
+  const rawEndpoint = config.sparqlEndpoint;
+  if (!rawEndpoint) {
     return {
       status: 400,
       jsonBody: {
@@ -63,11 +64,16 @@ export async function devTest(
     };
   }
 
+  // Render endpoint and query as Mustache templates against { payload }.
+  // Use {{{...}}} (triple braces) in the query for as-is injection in BIND.
+  const endpoint = Mustache.render(rawEndpoint, { payload });
+  const query = Mustache.render(config.sparqlQuery, { payload });
+
   context.log(`[dev-test] Running query for '${webhookId}'`);
 
   let currentRaw: SparqlResult;
   try {
-    currentRaw = await runSparqlQuery(endpoint, config.sparqlQuery);
+    currentRaw = await runSparqlQuery(endpoint, query);
   } catch (err: any) {
     return {
       status: 502,
