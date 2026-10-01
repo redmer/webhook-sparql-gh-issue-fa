@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "webhook-to-gh-issue",
   "version": "1.0.0",
   "description": "",
   "main": "dist/src/functions/*.js",
@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/mustache": "^4.2.5",
-    "@types/node": "18.x",
+    "@types/node": "24.x",
     "typescript": "^5.0.0",
     "rimraf": "^5.0.0"
   }
