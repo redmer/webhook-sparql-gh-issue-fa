@@ -1,7 +1,7 @@
 {
-  "name": "webhook-to-gh-issue",
+  "name": "webhook-sparql-gh-issue-fa",
   "version": "1.0.0",
-  "description": "",
+  "description": "Trigger on webhook, issue a SPARQL query to check for changes, then create a GitHub issue",
   "main": "dist/src/functions/*.js",
   "scripts": {
     "build": "tsc",
